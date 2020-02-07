@@ -227,14 +227,18 @@ module.exports = function svelte(options = {}) {
 						Object.assign(preprocessOptions, { filename: id })
 					).then(code => code.toString());
 				} else {
-					preprocessPromise = preprocess(code, options.preprocess, {
-						filename: id
-					}).then(processed => {
-						if (processed.dependencies) {
-							dependencies.push(...processed.dependencies);
-						}
-						return processed.toString();
-					});
+					preprocessPromise = options.preprocess.reduce((promise_code, pp) => {
+						return promise_code.then((code) => {
+							return preprocess(code, [pp], {
+								filename: id
+							}).then(processed => {
+								if (processed.dependencies) {
+									dependencies.push(...processed.dependencies);
+								}
+								return processed.toString();
+							});
+						});
+					}, Promise.resolve(code));
 				}
 			} else {
 				preprocessPromise = Promise.resolve(code);
